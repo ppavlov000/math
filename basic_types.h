@@ -50,42 +50,47 @@ typedef     float		float_t;
 #define ONE32_64    0x000000007fffffffLL
 #define MONE32_64   0xFFFFFFFF80000000LL
 
-typedef struct _int2
+typedef struct 
 {
     intg_t a ;
     intg_t b ;
 }intg2_t ;
 
-typedef struct _fract16D2
+typedef struct 
 {
 	frac16_t a;
 	frac16_t b;
 }fract16D2_t;
 
-typedef struct _fract8D2
+typedef struct 
 {
 	frac8_t a;
 	frac8_t b;
 
 }fract8D2_t;
 
-typedef struct _fract2
+typedef struct 
 {
 	frac_t a;
 	frac_t b;
 }frac2_t;
 
-typedef struct _double2
+typedef struct 
+{
+	float_t a;
+	float_t b;
+}float2_t;
+
+typedef struct 
 {
 	double_t a;
 	double_t b;
 }double2_t;
 
-typedef struct _accum2
+typedef struct 
 {
     acc_t a ;
     acc_t b ;
-
 }acc2_t;
 
 #endif // __BASIC_TYPES_H__

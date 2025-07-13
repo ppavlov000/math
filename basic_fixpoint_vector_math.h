@@ -56,4 +56,14 @@ FORCE_INLINE intg2_t FracToIntgVectorConvert(frac2_t in)
 	return res;
 }
 
+INLINE intg2_t IntgVecMake(intg_t a, intg_t b)
+{
+	intg2_t ret;
+
+	ret.a = a;
+	ret.b = b;
+
+	return ret;
+}
+
 #endif //  __BASIC_FIXPOINT_VECTOR_MATH_H__
