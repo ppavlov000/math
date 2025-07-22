@@ -74,7 +74,7 @@ INLINE intg_t FracNorm(frac_t x)
 	if (x != 0)
 	{
 		for (ex = 0; x > 0; x <<= 1){ 
-			ex++
+            ex++;
 		};
 		ex--;
 	}
@@ -129,15 +129,6 @@ INLINE acc_t AccSetLow(frac_t x)
 
 	acc = (uint32_t)x;
 	return acc;
-}
-
-INLINE frac_t AccGetLow(acc_t acc)
-{
-	frac_t res;
-
-	res = (frac_t)acc;
-
-	return res;
 }
 
 INLINE acc_t AccSetSaturation(acc_t acc)
