@@ -74,8 +74,8 @@ INLINE intg_t FracNorm(frac_t x)
 	if (x != 0)
 	{
 		for (ex = 0; x > 0; x <<= 1){ 
-            ex++;
-		};
+            		ex++;
+		}
 		ex--;
 	}
 
