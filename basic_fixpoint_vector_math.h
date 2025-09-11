@@ -66,4 +66,26 @@ INLINE intg2_t IntgVecMake(intg_t a, intg_t b)
 	return ret;
 }
 
+INLINE frac2_t FracVecSetA(frac2_t vec, frac_t a)
+{
+	vec.a = a;
+	return vec;
+}
+
+INLINE frac2_t FracVecSetB(frac2_t vec, frac_t b)
+{
+	vec.b = b;
+	return vec;
+}
+
+INLINE frac2_t FracVecMake(frac_t a, frac_t b)
+{
+	frac2_t ret = { 0,0 };
+
+	ret = FracVecSetA(ret, a);
+	ret = FracVecSetB(ret, b);
+
+	return ret;
+}
+
 #endif //  __BASIC_FIXPOINT_VECTOR_MATH_H__
