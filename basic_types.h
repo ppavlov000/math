@@ -24,8 +24,12 @@ Redistribution and use in source and binary forms, with or without modification,
 #define     __restrict
 
 #define ABS(a)   ((a)<0?-(a):(a))
+#ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
+#ifndef MAX
 #define MAX(a,b) ((a)>(b)?(a):(b))
+#endif
 
 #define FRACTIONAL_BITS     (32)
 #define INT_BASE			(5) 

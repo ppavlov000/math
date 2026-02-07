@@ -107,6 +107,13 @@ INLINE void CircularBufferPushChunkInterleaved(CircularBuffer_t* pBuffer, Circul
     }
 }
 
+INLINE void CircularBufferPushChunkDualMonoToInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* valueL, CircularBufferElement_t* valueR, int size) {
+    for (int i = 0; i < size; i++) {
+        CircularBufferPush(pBuffer, &valueL[i]);
+        CircularBufferPush(pBuffer, &valueR[i]);
+    }
+}
+
 INLINE void CircularBufferGetChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size){
     for (int i = 0; i < size; i++) {
         value[i] = CircularBufferGet(pBuffer, i);
@@ -188,7 +195,7 @@ INLINE void CircularBufferPushChunkDeinterleaved(CircularBuffer_t* pBuffer, Circ
     }
 }
 
-INLINE int CircularBufferSize(const CircularBuffer_t* pBuffer) {
+INLINE int CircularBufferGetSize(const CircularBuffer_t* pBuffer) {
     int size = pBuffer->end - pBuffer->start;
     if (size < 0) {
         size += pBuffer->size;
