@@ -31,6 +31,10 @@ Redistribution and use in source and binary forms, with or without modification,
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
 
+#ifndef LIMIT
+#define LIMIT(x, threshold)  ((x) < (-threshold) ? (-threshold) : ((x) > (threshold) ? (threshold) : (x)))
+#endif
+
 #define FRACTIONAL_BITS     (32)
 #define INT_BASE			(5) 
 

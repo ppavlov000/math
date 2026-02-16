@@ -120,6 +120,30 @@ INLINE void CircularBufferGetChunk(CircularBuffer_t* pBuffer, CircularBufferElem
     }
 }
 
+INLINE CircularBufferElement_t CircularBufferGetChunkSum(CircularBuffer_t* pBuffer, int size) {
+    CircularBufferElement_t sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += CircularBufferGet(pBuffer, i);
+    }
+	return sum;
+}
+
+INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleaved(CircularBuffer_t* pBuffer, int size, int offset) {
+    CircularBufferElement_t sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += ABS(CircularBufferGet(pBuffer, 2 * i + offset));
+    }
+    return sum;
+}
+
+INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleavedFromTail(CircularBuffer_t* pBuffer, int size, int offset) {
+    CircularBufferElement_t sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += ABS(CircularBufferGetFromTail(pBuffer, 2 * i + offset));
+    }
+    return sum;
+}
+
 INLINE void CircularBufferPopChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < size; i++) {
         value[i] = CircularBufferPop(pBuffer);
