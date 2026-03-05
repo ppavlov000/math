@@ -157,7 +157,7 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleavedFromTail(C
             max = val; 
         }
     }
-    return val;
+    return max;
 }
 
 INLINE void CircularBufferPopChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
