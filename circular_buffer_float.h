@@ -149,15 +149,39 @@ INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleavedFromTail(Circul
 }
 
 INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleavedFromTail(CircularBuffer_t* pBuffer, int size, int offset) {
-    CircularBufferElement_t max = 0;
+    CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i++) {
         val = ABS(CircularBufferGetFromTail(pBuffer, 2 * i + offset));
-        if (max < val){
-            max = val; 
+        if (maxVal < val){
+            maxVal = val;
         }
     }
-    return max;
+    return maxVal;
+}
+
+INLINE CircularBufferElement_t CircularBufferGetPeakInRangeFromTail(CircularBuffer_t* pBuffer, int size) {
+    CircularBufferElement_t maxVal = 0;
+    CircularBufferElement_t val;
+    for (int i = 0; i < size; i++) {
+        val = ABS(CircularBufferGetFromTail(pBuffer, i));
+        if (maxVal < val) {
+            maxVal = val;
+        }
+    }
+    return maxVal;
+}
+
+INLINE CircularBufferElement_t CircularBufferGetPeakInRange(CircularBuffer_t* pBuffer, int size) {
+    CircularBufferElement_t maxVal = 0;
+    CircularBufferElement_t val;
+    for (int i = 0; i < size; i++) {
+        val = ABS(CircularBufferGet(pBuffer, i));
+        if (maxVal < val) {
+            maxVal = val;
+        }
+    }
+    return maxVal;
 }
 
 INLINE void CircularBufferPopChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
