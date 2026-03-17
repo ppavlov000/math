@@ -135,7 +135,7 @@ INLINE CircularBufferElement_t CircularBufferGetChunkSum(CircularBuffer_t* pBuff
 INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleaved(CircularBuffer_t* pBuffer, int size, int offset) {
     CircularBufferElement_t sum = 0;
     for (int i = 0; i < size; i++) {
-        sum += ABS(CircularBufferGet(pBuffer, 2 * i + offset));
+        sum += fabs(CircularBufferGet(pBuffer, 2 * i + offset));
     }
     return sum;
 }
@@ -143,7 +143,7 @@ INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleaved(CircularBuffer
 INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleavedFromTail(CircularBuffer_t* pBuffer, int size, int offset) {
     CircularBufferElement_t sum = 0;
     for (int i = 0; i < size; i++) {
-        sum += ABS(CircularBufferGetFromTail(pBuffer, 2 * i + offset));
+        sum += fabs(CircularBufferGetFromTail(pBuffer, 2 * i + offset));
     }
     return sum;
 }
@@ -152,7 +152,7 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleavedFromTail(C
     CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i++) {
-        val = ABS(CircularBufferGetFromTail(pBuffer, 2 * i + offset));
+        val = fabs(CircularBufferGetFromTail(pBuffer, 2 * i + offset));
         if (maxVal < val){
             maxVal = val;
         }
@@ -164,7 +164,7 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRangeFromTail(CircularBuff
     CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i++) {
-        val = ABS(CircularBufferGetFromTail(pBuffer, i));
+        val = fabs(CircularBufferGetFromTail(pBuffer, i));
         if (maxVal < val) {
             maxVal = val;
         }
@@ -176,7 +176,19 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRange(CircularBuffer_t* pB
     CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i++) {
-        val = ABS(CircularBufferGet(pBuffer, i));
+        val = fabs(CircularBufferGet(pBuffer, i));
+        if (maxVal < val) {
+            maxVal = val;
+        }
+    }
+    return maxVal;
+}
+
+INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleaved(CircularBuffer_t* pBuffer, int size, int offset) {
+    CircularBufferElement_t maxVal = 0;
+    CircularBufferElement_t val;
+    for (int i = 0; i < size; i += 2) {
+        val = fabs(CircularBufferGet(pBuffer, i + offset));
         if (maxVal < val) {
             maxVal = val;
         }
