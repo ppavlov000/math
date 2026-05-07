@@ -21,7 +21,10 @@ typedef struct
     inst_name.start = 0; \
     inst_name.end = 0; \
     inst_name.size = sizeof(inst_name##_array) / sizeof(CircularBufferElement_t); \
-    inst_name.elements = inst_name##_array
+    inst_name.elements = inst_name##_array; \
+    for (int i = 0; i < inst_name.size; i++) { \
+        inst_name.elements[i] = 0; \
+    }    
 
 INLINE void CircularBufferSetSize(CircularBuffer_t* pBuffer, intg_t num) {
     pBuffer->size = num;
@@ -29,6 +32,10 @@ INLINE void CircularBufferSetSize(CircularBuffer_t* pBuffer, intg_t num) {
 
 INLINE void CircularBufferSetTail(CircularBuffer_t* pBuffer, intg_t pos) {
     pBuffer->end = pos;
+}
+
+INLINE void CircularBufferSetFull(CircularBuffer_t* pBuffer) {
+    pBuffer->end = pBuffer->size - 1;
 }
 
 INLINE void CircularBufferInit(CircularBuffer_t* pBuffer) {
@@ -44,6 +51,14 @@ INLINE void CircularBufferInitFull(CircularBuffer_t* pBuffer) {
     pBuffer->end = pBuffer->size - 1;
     for (int i = 0; i < pBuffer->size; i++) {
         pBuffer->elements[i] = 0;
+    }
+}
+
+INLINE void CircularBufferFill(CircularBuffer_t* pBuffer, CircularBufferElement_t value) {
+    pBuffer->start = 0;
+    pBuffer->end = 0;
+    for (int i = 0; i < pBuffer->size; i++) {
+        pBuffer->elements[i] = value;
     }
 }
 
