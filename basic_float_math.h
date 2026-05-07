@@ -20,4 +20,19 @@ INLINE void Interleave(float_t* in0, float_t* in1, float2_t* out, intg_t numSamp
     }
 }
 
+INLINE void SmoothValue(float_t* current, float_t* target, float_t step) {
+    float_t delta = *target - *current;
+    if (fabs(delta) <= step) {
+        *current = *target;
+    }
+    else {
+        if (delta > 0) {
+            *current += step;
+        }
+        else {
+            *current -= step;
+        }
+    }
+}
+
 #endif // __BASIC_FLOAT_MATH_H__
