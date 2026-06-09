@@ -42,15 +42,15 @@ typedef struct
 typedef struct
 {
     float_t NS;
-    float_t x1;
-    float_t x2;
+    double_t x1;
+    double_t x2;
 } BiquadFloatMonoStates_t;
 
 typedef struct
 {
     float2_t NS;
-    float2_t x1;
-    float2_t x2;
+    double2_t x1;
+    double2_t x2;
 } BiquadFloatStereoStates_t;
 
 typedef struct
@@ -67,8 +67,8 @@ typedef struct
 static void BiquadMonoFloatProcessingSimple(const float_t *pIn, float_t *pOut, const BiquadFloatMonoCoefs_t *pCoefs, BiquadFloatMonoStates_t *pStates)
 {
     float_t acc;
-    float_t acc_a = 0;
-    float_t acc_b = 0;
+    double_t acc_a = 0;
+    double_t acc_b = 0;
     float_t dIn;
 
     dIn = *pIn;
@@ -102,8 +102,8 @@ static void BiquadMonoFloatProcessing(const float_t *pIn, float_t *pOut, const B
 static void BiquadStereoFloatProcessingSimple(const float_t *pIn, float_t *pOut, const BiquadFloatStereoCoefs_t *pCoefs, BiquadFloatStereoStates_t *pStates)
 {
     float2_t acc;
-    float2_t acc_a = {0, 0};
-    float2_t acc_b = {0, 0};
+    double2_t acc_a = {0, 0};
+    double2_t acc_b = {0, 0};
     float2_t dIn;
 
     dIn.a = (float_t)pIn[0];
