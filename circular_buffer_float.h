@@ -126,6 +126,14 @@ static void CircularBufferPushChunkInterleaved(CircularBuffer_t* pBuffer, Circul
     }
 }
 
+static void CircularBufferPushChunkInterleavedScaled(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, float_t scale, int size) {
+    CircularBufferElement_t val;
+    for (int i = 0; i < size; i++) {
+        val = value[2 * i] * scale;
+        CircularBufferPush(pBuffer, &val);
+    }
+}
+
 static void CircularBufferPushChunkDualMonoToInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* valueL, CircularBufferElement_t* valueR, int size) {
     for (int i = 0; i < size; i++) {
         CircularBufferPush(pBuffer, &valueL[i]);

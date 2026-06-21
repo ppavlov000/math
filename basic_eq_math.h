@@ -23,9 +23,9 @@ typedef struct
 {
     int Active;
     BiquadType_t Type;
-    float Frequency;
-    float Gain;
-    float Q;
+    float_t Frequency;
+    float_t Gain;
+    float_t Q;
 } BiquadParam_t;
 
 typedef struct
@@ -147,18 +147,25 @@ static void BiquadStereoFloatProcessing(const float_t *pIn, float_t *pOut, const
     }
 }
 
-static intg2_t EQCoefsFloatNormalise(float *b, float *a)
+static intg2_t EQCoefsFloatNormalise(float_t *b, float_t *a)
 {
-    float max_a = 0;
-    float max_b = 0;
-    float a0 = a[0];
+    float_t max_a = 0;
+    float_t  max_b = 0;
+    float_t  a0 = a[0];
+    float_t  a0_rep;
     intg_t shifts_a = 0;
     intg_t shifts_b = 0;
 
+    if (a0 != 0.f) {
+        a0_rep = 1.f / a0;
+    } else {
+        a0_rep = 1.f;
+    }
+
     for (intg_t i = 0; i < 3; i++)
     {
-        b[i] /= a0;
-        a[i] /= a0;
+        b[i] *= a0_rep;
+        a[i] *= a0_rep;
         if (fabsf(b[i]) > max_b)
             max_b = fabsf(b[i]);
         if (fabsf(a[i]) > max_a)
@@ -167,13 +174,13 @@ static intg2_t EQCoefsFloatNormalise(float *b, float *a)
 
     while (max_a > 1)
     {
-        max_a /= 2;
+        max_a *= 0.5f;
         shifts_a++;
     }
 
     while (max_b > 1)
     {
-        max_b /= 2;
+        max_b *= 0.5f;
         shifts_b++;
     }
 
@@ -182,14 +189,14 @@ static intg2_t EQCoefsFloatNormalise(float *b, float *a)
 
     for (intg_t i = 0; i < 3; i++)
     {
-        b[i] = b[i] * pow(2.0, -shifts_b);
-        a[i] = a[i] * pow(2.0, -shifts_a);
+        b[i] = b[i] * powf(2.0f, -shifts_b);
+        a[i] = a[i] * powf(2.0f, -shifts_a);
     }
 
     return IntgVecMake(shifts_a, shifts_b);
 }
 
-static void SetBiquadCoefsFloatDefault(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *pCoefs, float sampleRate)
+static void SetBiquadCoefsFloatDefault(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *pCoefs, float_t sampleRate)
 {
     pCoefs->active = 0;
     pCoefs->shifts_a = pCoefs->shifts_b = 0;
@@ -202,69 +209,77 @@ static void SetBiquadCoefsFloatDefault(BiquadParam_t *pParams, BiquadFloatMonoCo
     pCoefs->a[2] = 0;
 }
 
-static void SetBiquadCoefsFloatSimple(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *pCoefs, float sampleRate)
+static void SetBiquadCoefsFloatSimple(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *pCoefs, float_t sampleRate)
 {
-    float Fc = pParams->Frequency;
-    float Q = pParams->Q;
-    float dbGain = pParams->Gain;
-    float w = 2 * DOUBLE_PI * Fc / sampleRate;
-    float A = pow(10.0, dbGain / 40);
-    float alpha = sin(w) / (2 * Q);
+    if ((sampleRate == 0) || (pParams->Q == 0) || (pParams->Frequency == 0)) return;
+   
+    float_t Fc = pParams->Frequency;
+    float_t Q = pParams->Q;
+    float_t dbGain = pParams->Gain;
+    float_t w = 2 * DOUBLE_PI * Fc / sampleRate;
+    float_t A = powf(10.0f, dbGain / 40.f);
+    float_t alpha = sinf(w) / (2.f * Q);
 
-    float a[3] = {1, 0, 0};
-    float b[3] = {1, 0, 0};
+    float_t a[3] = {1, 0, 0};
+    float_t b[3] = {1, 0, 0};
+
+    float_t ftmp;
+    float_t ftmp2;
 
     switch (pParams->Type)
     {
     case EQ_TYPE_LPF:
         // LPF:        H(s) = 1 / (s^2 + s/Q + 1)
-        //             b0 =  (1 - cos(w0))/2
-        //             b1 =   1 - cos(w0)
-        //             b2 =  (1 - cos(w0))/2
+        //             b0 =  (1 - cosf(w0))/2
+        //             b1 =   1 - cosf(w0)
+        //             b2 =  (1 - cosf(w0))/2
         //             a0 =   1 + alpha
-        //             a1 =  -2*cos(w0)
+        //             a1 =  -2*cosf(w0)
         //             a2 =   1 - alpha
-        b[0] = (1 - cos(w)) / 2;
-        b[1] = (1 - cos(w));
-        b[2] = (1 - cos(w)) / 2;
+        ftmp = cosf(w);
+        b[0] = (1.f - ftmp) * 0.5f;
+        b[1] = (1.f - ftmp);
+        b[2] = (1.f - ftmp) * 0.5f;
 
-        a[0] = 1 + alpha;
-        a[1] = -2 * cos(w);
-        a[2] = 1 - alpha;
+        a[0] = 1.f + alpha;
+        a[1] = -2.f * ftmp;
+        a[2] = 1.f - alpha;
         break;
 
     case EQ_TYPE_HPF:
         // HPF:        H(s) = s^2 / (s^2 + s/Q + 1)
-        //             b0 =  (1 + cos(w0))/2
-        //             b1 = -(1 + cos(w0))
-        //             b2 =  (1 + cos(w0))/2
+        //             b0 =  (1 + cosf(w0))/2
+        //             b1 = -(1 + cosf(w0))
+        //             b2 =  (1 + cosf(w0))/2
         //             a0 =   1 + alpha
-        //             a1 =  -2*cos(w0)
+        //             a1 =  -2*cosf(w0)
         //             a2 =   1 - alpha
-        b[0] = (1 + cos(w)) / 2;
-        b[1] = -(1 + cos(w));
-        b[2] = (1 + cos(w)) / 2;
+		ftmp = cosf(w);
+        b[0] = (1.f + ftmp) * 0.5f;
+        b[1] = -(1.f + ftmp);
+        b[2] = (1.f + ftmp) * 0.5f;
 
-        a[0] = 1 + alpha;
-        a[1] = -2 * cos(w);
-        a[2] = 1 - alpha;
+        a[0] = 1.f + alpha;
+        a[1] = -2.f * ftmp;
+        a[2] = 1.f - alpha;
         break;
 
     case EQ_TYPE_BP:
         // BPF:        H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
-        //             b0 =   sin(w0)/2  =   Q*alpha
+        //             b0 =   sinf(w0)/2  =   Q*alpha
         //             b1 =   0
-        //             b2 =  -sin(w0)/2  =  -Q*alpha
+        //             b2 =  -sinf(w0)/2  =  -Q*alpha
         //             a0 =   1 + alpha
-        //             a1 =  -2*cos(w0)
+        //             a1 =  -2*cosf(w0)
         //             a2 =   1 - alpha
-        b[0] = sin(w) / 2;
+		ftmp = sinf(w) * 0.5f;
+        b[0] = ftmp;
         b[1] = 0;
-        b[2] = -sin(w) / 2;
+        b[2] = -ftmp;
 
-        a[0] = 1 + alpha;
-        a[1] = -2 * cos(w);
-        a[2] = 1 - alpha;
+        a[0] = 1.f + alpha;
+        a[1] = -2.f * cosf(w);
+        a[2] = 1.f - alpha;
         break;
 
     case EQ_TYPE_BP0DB:
@@ -273,101 +288,109 @@ static void SetBiquadCoefsFloatSimple(BiquadParam_t *pParams, BiquadFloatMonoCoe
         //             b1 =   0
         //             b2 =  -alpha
         //             a0 =   1 + alpha
-        //             a1 =  -2*cos(w0)
+        //             a1 =  -2*cosf(w0)
         //             a2 =   1 - alpha
         b[0] = alpha;
         b[1] = 0;
         b[2] = -alpha;
 
-        a[0] = 1 + alpha;
-        a[1] = -2 * cos(w);
-        a[2] = 1 - alpha;
+        a[0] = 1.f + alpha;
+        a[1] = -2.f * cosf(w);
+        a[2] = 1.f - alpha;
         break;
 
     case EQ_TYPE_NOTCH:
         // notch:      H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
         //             b0 =   1
-        //             b1 =  -2*cos(w0)
+        //             b1 =  -2*cosf(w0)
         //             b2 =   1
         //             a0 =   1 + alpha
-        //             a1 =  -2*cos(w0)
+        //             a1 =  -2*cosf(w0)
         //             a2 =   1 - alpha
-        b[0] = 1;
-        b[1] = -2 * cos(w);
-        b[2] = 1;
+		ftmp = cosf(w);
+        b[0] = 1.f;
+        b[1] = -2.f * ftmp;
+        b[2] = 1.f;
 
-        a[0] = 1 + alpha;
-        a[1] = -2 * cos(w);
-        a[2] = 1 - alpha;
+        a[0] = 1.f + alpha;
+        a[1] = -2.f * ftmp;
+        a[2] = 1.f - alpha;
         break;
 
     case EQ_TYPE_PEAK:
         // peakingEQ:  H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
         //             b0 =   1 + alpha*A
-        //             b1 =  -2*cos(w0)
+        //             b1 =  -2*cosf(w0)
         //             b2 =   1 - alpha*A
         //             a0 =   1 + alpha/A
-        //             a1 =  -2*cos(w0)
+        //             a1 =  -2*cosf(w0)
         //             a2 =   1 - alpha/A
-        b[0] = 1 + alpha * A;
-        b[1] = -2 * cos(w);
-        b[2] = 1 - alpha * A;
+		ftmp = cosf(w);
+        b[0] = 1.f + alpha * A;
+        b[1] = -2.f * ftmp;
+        b[2] = 1.f - alpha * A;
 
-        a[0] = 1 + alpha / A;
-        a[1] = -2 * cos(w);
-        a[2] = 1 - alpha / A;
+		ftmp2 = alpha / A;
+        a[0] = 1.f + ftmp2;
+        a[1] = -2.f * ftmp;
+        a[2] = 1.f - ftmp2;
         break;
 
     case EQ_TYPE_LSHELF:
-        // lowShelf: H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
-        //             b0 =    A*( (A+1) - (A-1)*cos(w0) + 2*sqrt(A)*alpha )
-        //             b1 =  2*A*( (A-1) - (A+1)*cos(w0)                   )
-        //             b2 =    A*( (A+1) - (A-1)*cos(w0) - 2*sqrt(A)*alpha )
-        //             a0 =        (A+1) + (A-1)*cos(w0) + 2*sqrt(A)*alpha
-        //             a1 =   -2*( (A-1) + (A+1)*cos(w0)                   )
-        //             a2 =        (A+1) + (A-1)*cos(w0) - 2*sqrt(A)*alpha
-        b[0] = A * ((A + 1) - (A - 1) * cos(w) + 2 * sqrt(A) * alpha);
-        b[1] = 2 * A * ((A - 1) - (A + 1) * cos(w));
-        b[2] = A * ((A + 1) - (A - 1) * cos(w) - 2 * sqrt(A) * alpha);
+        // lowShelf: H(s) = A * (s^2 + (sqrtf(A)/Q)*s + A)/(A*s^2 + (sqrtf(A)/Q)*s + 1)
+        //             b0 =    A*( (A+1) - (A-1)*cosf(w0) + 2*sqrtf(A)*alpha )
+        //             b1 =  2*A*( (A-1) - (A+1)*cosf(w0)                   )
+        //             b2 =    A*( (A+1) - (A-1)*cosf(w0) - 2*sqrtf(A)*alpha )
+        //             a0 =        (A+1) + (A-1)*cosf(w0) + 2*sqrtf(A)*alpha
+        //             a1 =   -2*( (A-1) + (A+1)*cosf(w0)                   )
+        //             a2 =        (A+1) + (A-1)*cosf(w0) - 2*sqrtf(A)*alpha
+        ftmp = cosf(w);
+        ftmp2 = 2 * sqrtf(A);
+        b[0] = A * ((A + 1.f) - (A - 1.f) * ftmp + ftmp2 * alpha);
+        b[1] = 2 * A * ((A - 1.f) - (A + 1.f) * ftmp);
+        b[2] = A * ((A + 1.f) - (A - 1.f) * ftmp - ftmp2 * alpha);
 
-        a[0] = (A + 1) + (A - 1) * cos(w) + 2 * sqrt(A) * alpha;
-        a[1] = -2 * ((A - 1) + (A + 1) * cos(w));
-        a[2] = (A + 1) + (A - 1) * cos(w) - 2 * sqrt(A) * alpha;
+        a[0] = (A + 1.f) + (A - 1.f) * ftmp + ftmp2 * alpha;
+        a[1] = -2.f * ((A - 1.f) + (A + 1.f) * ftmp);
+        a[2] = (A + 1.f) + (A - 1.f) * ftmp - ftmp2 * alpha;
         break;
 
     case EQ_TYPE_HSHELF:
-        // highShelf: H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
-        //             b0 =    A*( (A+1) + (A-1)*cos(w0) + 2*sqrt(A)*alpha )
-        //             b1 = -2*A*( (A-1) + (A+1)*cos(w0)                   )
-        //             b2 =    A*( (A+1) + (A-1)*cos(w0) - 2*sqrt(A)*alpha )
-        //             a0 =        (A+1) - (A-1)*cos(w0) + 2*sqrt(A)*alpha
-        //             a1 =    2*( (A-1) - (A+1)*cos(w0)                   )
-        //             a2 =        (A+1) - (A-1)*cos(w0) - 2*sqrt(A)*alpha
-        b[0] = A * ((A + 1) + (A - 1) * cos(w) + 2 * sqrt(A) * alpha);
-        b[1] = -2 * A * ((A - 1) + (A + 1) * cos(w));
-        b[2] = A * ((A + 1) + (A - 1) * cos(w) - 2 * sqrt(A) * alpha);
+        // highShelf: H(s) = A * (A*s^2 + (sqrtf(A)/Q)*s + 1)/(s^2 + (sqrtf(A)/Q)*s + A)
+        //             b0 =    A*( (A+1) + (A-1)*cosf(w0) + 2*sqrtf(A)*alpha )
+        //             b1 = -2*A*( (A-1) + (A+1)*cosf(w0)                   )
+        //             b2 =    A*( (A+1) + (A-1)*cosf(w0) - 2*sqrtf(A)*alpha )
+        //             a0 =        (A+1) - (A-1)*cosf(w0) + 2*sqrtf(A)*alpha
+        //             a1 =    2*( (A-1) - (A+1)*cosf(w0)                   )
+        //             a2 =        (A+1) - (A-1)*cosf(w0) - 2*sqrtf(A)*alpha
+        ftmp = cosf(w);
+        ftmp2 = 2 * sqrtf(A);
+        b[0] = A * ((A + 1.f) + (A - 1.f) * ftmp + ftmp2 * alpha);
+        b[1] = -2.f * A * ((A - 1.f) + (A + 1.f) * ftmp);
+        b[2] = A * ((A + 1.f) + (A - 1.f) * ftmp - ftmp2 * alpha);
 
-        a[0] = (A + 1) - (A - 1) * cos(w) + 2 * sqrt(A) * alpha;
-        a[1] = 2 * ((A - 1) - (A + 1) * cos(w));
-        a[2] = (A + 1) - (A - 1) * cos(w) - 2 * sqrt(A) * alpha;
+        a[0] = (A + 1.f) - (A - 1.f) * ftmp + ftmp2 * alpha;
+        a[1] = 2.f * ((A - 1.f) - (A + 1.f) * ftmp);
+        a[2] = (A + 1.f) - (A - 1.f) * ftmp - ftmp2 * alpha;
         break;
 
     case EQ_TYPE_APF:
         // APF:        H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
 
         //            b0 =   1 - alpha
-        //            b1 =  -2*cos(w0)
+        //            b1 =  -2*cosf(w0)
         //            b2 =   1 + alpha
         //            a0 =   1 + alpha
-        //            a1 =  -2*cos(w0)
+        //            a1 =  -2*cosf(w0)
         //            a2 =   1 - alpha
-        b[0] = 1 - alpha;
-        b[1] = -2 * cos(w);
-        b[2] = 1 + alpha;
+        ftmp = cosf(w);
+        b[0] = 1.f - alpha;
+        b[1] = -2.f * ftmp;
+        b[2] = 1.f + alpha;
 
-        a[0] = 1 + alpha;
-        a[1] = -2 * cos(w);
-        a[2] = 1 - alpha;
+        a[0] = 1.f + alpha;
+        a[1] = -2.f * ftmp;
+        a[2] = 1.f - alpha;
         break;
     }
     intg2_t shifts = EQCoefsFloatNormalise(b, a);
@@ -375,8 +398,8 @@ static void SetBiquadCoefsFloatSimple(BiquadParam_t *pParams, BiquadFloatMonoCoe
     {
         pCoefs->shifts_a = shifts.a;
         pCoefs->shifts_b = shifts.b;
-        pCoefs->shifts_a_mul = pow(2.0f, shifts.a); // Approch using multiplication insted shifting
-        pCoefs->shifts_b_mul = pow(2.0f, shifts.b);
+        pCoefs->shifts_a_mul = powf(2.0f, shifts.a); // Approch using multiplication insted shifting
+        pCoefs->shifts_b_mul = powf(2.0f, shifts.b);
     }
     else
     {
@@ -395,17 +418,17 @@ static void SetBiquadCoefsFloatSimple(BiquadParam_t *pParams, BiquadFloatMonoCoe
     pCoefs->active = pParams->Active;    
 }
 
-static void SetBiquadCoefsFloat(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *pCoefs, float sampleRate)
+static void SetBiquadCoefsFloat(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *pCoefs, float_t sampleRate)
 {
-    float Fc = pParams->Frequency;
-    float Q = pParams->Q;
-    float dbGain = pParams->Gain;
-    float w = 2 * DOUBLE_PI * Fc / sampleRate;
-    float A = pow(10.0, dbGain / 40);
-    float alpha = sin(w) / (2 * Q);
+    float_t Fc = pParams->Frequency;
+    float_t Q = pParams->Q;
+    float_t dbGain = pParams->Gain;
+    float_t w = 2 * DOUBLE_PI * Fc / sampleRate;
+    float_t A = powf(10.0f, dbGain / 40.f);
+    float_t alpha = sinf(w) / (2.f * Q);
 
-    float a[3] = {1, 0, 0};
-    float b[3] = {1, 0, 0};
+    float_t a[3] = {1, 0, 0};
+    float_t b[3] = {1, 0, 0};
 
     if (pParams->Active)
     {
@@ -413,53 +436,53 @@ static void SetBiquadCoefsFloat(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *
         {
         case EQ_TYPE_LPF:
             // LPF:        H(s) = 1 / (s^2 + s/Q + 1)
-            //             b0 =  (1 - cos(w0))/2
-            //             b1 =   1 - cos(w0)
-            //             b2 =  (1 - cos(w0))/2
+            //             b0 =  (1 - cosf(w0))/2
+            //             b1 =   1 - cosf(w0)
+            //             b2 =  (1 - cosf(w0))/2
             //             a0 =   1 + alpha
-            //             a1 =  -2*cos(w0)
+            //             a1 =  -2*cosf(w0)
             //             a2 =   1 - alpha
-            b[0] = (1 - cos(w)) / 2;
-            b[1] = (1 - cos(w));
-            b[2] = (1 - cos(w)) / 2;
+            b[0] = (1.f - cosf(w)) * 0.5f;
+            b[1] = (1.f - cosf(w));
+            b[2] = (1.f - cosf(w)) * 0.5f;
 
-            a[0] = 1 + alpha;
-            a[1] = -2 * cos(w);
-            a[2] = 1 - alpha;
+            a[0] = 1.f + alpha;
+            a[1] = -2.f * cosf(w);
+            a[2] = 1.f - alpha;
             break;
 
         case EQ_TYPE_HPF:
             // HPF:        H(s) = s^2 / (s^2 + s/Q + 1)
-            //             b0 =  (1 + cos(w0))/2
-            //             b1 = -(1 + cos(w0))
-            //             b2 =  (1 + cos(w0))/2
+            //             b0 =  (1 + cosf(w0))/2
+            //             b1 = -(1 + cosf(w0))
+            //             b2 =  (1 + cosf(w0))/2
             //             a0 =   1 + alpha
-            //             a1 =  -2*cos(w0)
+            //             a1 =  -2*cosf(w0)
             //             a2 =   1 - alpha
-            b[0] = (1 + cos(w)) / 2;
-            b[1] = -(1 + cos(w));
-            b[2] = (1 + cos(w)) / 2;
+            b[0] = (1.f + cosf(w)) * 0.5f;
+            b[1] = -(1.f + cosf(w));
+            b[2] = (1.f + cosf(w)) * 0.5f;
 
-            a[0] = 1 + alpha;
-            a[1] = -2 * cos(w);
-            a[2] = 1 - alpha;
+            a[0] = 1.f + alpha;
+            a[1] = -2.f * cosf(w);
+            a[2] = 1.f - alpha;
             break;
 
         case EQ_TYPE_BP:
             // BPF:        H(s) = s / (s^2 + s/Q + 1)  (constant skirt gain, peak gain = Q)
-            //             b0 =   sin(w0)/2  =   Q*alpha
+            //             b0 =   sinf(w0)/2  =   Q*alpha
             //             b1 =   0
-            //             b2 =  -sin(w0)/2  =  -Q*alpha
+            //             b2 =  -sinf(w0)/2  =  -Q*alpha
             //             a0 =   1 + alpha
-            //             a1 =  -2*cos(w0)
+            //             a1 =  -2*cosf(w0)
             //             a2 =   1 - alpha
-            b[0] = sin(w) / 2;
+            b[0] = sinf(w) * 0.5f;
             b[1] = 0;
-            b[2] = -sin(w) / 2;
+            b[2] = -sinf(w) * 0.5f;
 
-            a[0] = 1 + alpha;
-            a[1] = -2 * cos(w);
-            a[2] = 1 - alpha;
+            a[0] = 1.f + alpha;
+            a[1] = -2.f * cosf(w);
+            a[2] = 1.f - alpha;
             break;
 
         case EQ_TYPE_BP0DB:
@@ -468,101 +491,101 @@ static void SetBiquadCoefsFloat(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *
             //             b1 =   0
             //             b2 =  -alpha
             //             a0 =   1 + alpha
-            //             a1 =  -2*cos(w0)
+            //             a1 =  -2*cosf(w0)
             //             a2 =   1 - alpha
             b[0] = alpha;
             b[1] = 0;
             b[2] = -alpha;
 
-            a[0] = 1 + alpha;
-            a[1] = -2 * cos(w);
-            a[2] = 1 - alpha;
+            a[0] = 1.f + alpha;
+            a[1] = -2.f * cosf(w);
+            a[2] = 1.f - alpha;
             break;
 
         case EQ_TYPE_NOTCH:
             // notch:      H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
             //             b0 =   1
-            //             b1 =  -2*cos(w0)
+            //             b1 =  -2*cosf(w0)
             //             b2 =   1
             //             a0 =   1 + alpha
-            //             a1 =  -2*cos(w0)
+            //             a1 =  -2*cosf(w0)
             //             a2 =   1 - alpha
-            b[0] = 1;
-            b[1] = -2 * cos(w);
-            b[2] = 1;
+            b[0] = 1.f;
+            b[1] = -2.f * cosf(w);
+            b[2] = 1.f;
 
-            a[0] = 1 + alpha;
-            a[1] = -2 * cos(w);
-            a[2] = 1 - alpha;
+            a[0] = 1.f + alpha;
+            a[1] = -2.f * cosf(w);
+            a[2] = 1.f - alpha;
             break;
 
         case EQ_TYPE_PEAK:
             // peakingEQ:  H(s) = (s^2 + s*(A/Q) + 1) / (s^2 + s/(A*Q) + 1)
             //             b0 =   1 + alpha*A
-            //             b1 =  -2*cos(w0)
+            //             b1 =  -2*cosf(w0)
             //             b2 =   1 - alpha*A
             //             a0 =   1 + alpha/A
-            //             a1 =  -2*cos(w0)
+            //             a1 =  -2*cosf(w0)
             //             a2 =   1 - alpha/A
-            b[0] = 1 + alpha * A;
-            b[1] = -2 * cos(w);
-            b[2] = 1 - alpha * A;
+            b[0] = 1.f + alpha * A;
+            b[1] = -2.f * cosf(w);
+            b[2] = 1.f - alpha * A;
 
-            a[0] = 1 + alpha / A;
-            a[1] = -2 * cos(w);
-            a[2] = 1 - alpha / A;
+            a[0] = 1.f + alpha / A;
+            a[1] = -2.f * cosf(w);
+            a[2] = 1.f - alpha / A;
             break;
 
         case EQ_TYPE_LSHELF:
-            // lowShelf: H(s) = A * (s^2 + (sqrt(A)/Q)*s + A)/(A*s^2 + (sqrt(A)/Q)*s + 1)
-            //             b0 =    A*( (A+1) - (A-1)*cos(w0) + 2*sqrt(A)*alpha )
-            //             b1 =  2*A*( (A-1) - (A+1)*cos(w0)                   )
-            //             b2 =    A*( (A+1) - (A-1)*cos(w0) - 2*sqrt(A)*alpha )
-            //             a0 =        (A+1) + (A-1)*cos(w0) + 2*sqrt(A)*alpha
-            //             a1 =   -2*( (A-1) + (A+1)*cos(w0)                   )
-            //             a2 =        (A+1) + (A-1)*cos(w0) - 2*sqrt(A)*alpha
-            b[0] = A * ((A + 1) - (A - 1) * cos(w) + 2 * sqrt(A) * alpha);
-            b[1] = 2 * A * ((A - 1) - (A + 1) * cos(w));
-            b[2] = A * ((A + 1) - (A - 1) * cos(w) - 2 * sqrt(A) * alpha);
+            // lowShelf: H(s) = A * (s^2 + (sqrtf(A)/Q)*s + A)/(A*s^2 + (sqrtf(A)/Q)*s + 1)
+            //             b0 =    A*( (A+1) - (A-1)*cosf(w0) + 2*sqrtf(A)*alpha )
+            //             b1 =  2*A*( (A-1) - (A+1)*cosf(w0)                   )
+            //             b2 =    A*( (A+1) - (A-1)*cosf(w0) - 2*sqrtf(A)*alpha )
+            //             a0 =        (A+1) + (A-1)*cosf(w0) + 2*sqrtf(A)*alpha
+            //             a1 =   -2*( (A-1) + (A+1)*cosf(w0)                   )
+            //             a2 =        (A+1) + (A-1)*cosf(w0) - 2*sqrtf(A)*alpha
+            b[0] = A * ((A + 1.f) - (A - 1.f) * cosf(w) + 2.f * sqrtf(A) * alpha);
+            b[1] = 2.f * A * ((A - 1.f) - (A + 1.f) * cosf(w));
+            b[2] = A * ((A + 1.f) - (A - 1.f) * cosf(w) - 2.f * sqrtf(A) * alpha);
 
-            a[0] = (A + 1) + (A - 1) * cos(w) + 2 * sqrt(A) * alpha;
-            a[1] = -2 * ((A - 1) + (A + 1) * cos(w));
-            a[2] = (A + 1) + (A - 1) * cos(w) - 2 * sqrt(A) * alpha;
+            a[0] = (A + 1.f) + (A - 1.f) * cosf(w) + 2.f * sqrtf(A) * alpha;
+            a[1] = -2.f * ((A - 1.f) + (A + 1.f) * cosf(w));
+            a[2] = (A + 1.f) + (A - 1.f) * cosf(w) - 2.f * sqrtf(A) * alpha;
             break;
 
         case EQ_TYPE_HSHELF:
-            // highShelf: H(s) = A * (A*s^2 + (sqrt(A)/Q)*s + 1)/(s^2 + (sqrt(A)/Q)*s + A)
-            //             b0 =    A*( (A+1) + (A-1)*cos(w0) + 2*sqrt(A)*alpha )
-            //             b1 = -2*A*( (A-1) + (A+1)*cos(w0)                   )
-            //             b2 =    A*( (A+1) + (A-1)*cos(w0) - 2*sqrt(A)*alpha )
-            //             a0 =        (A+1) - (A-1)*cos(w0) + 2*sqrt(A)*alpha
-            //             a1 =    2*( (A-1) - (A+1)*cos(w0)                   )
-            //             a2 =        (A+1) - (A-1)*cos(w0) - 2*sqrt(A)*alpha
-            b[0] = A * ((A + 1) + (A - 1) * cos(w) + 2 * sqrt(A) * alpha);
-            b[1] = -2 * A * ((A - 1) + (A + 1) * cos(w));
-            b[2] = A * ((A + 1) + (A - 1) * cos(w) - 2 * sqrt(A) * alpha);
+            // highShelf: H(s) = A * (A*s^2 + (sqrtf(A)/Q)*s + 1)/(s^2 + (sqrtf(A)/Q)*s + A)
+            //             b0 =    A*( (A+1) + (A-1)*cosf(w0) + 2*sqrtf(A)*alpha )
+            //             b1 = -2*A*( (A-1) + (A+1)*cosf(w0)                   )
+            //             b2 =    A*( (A+1) + (A-1)*cosf(w0) - 2*sqrtf(A)*alpha )
+            //             a0 =        (A+1) - (A-1)*cosf(w0) + 2*sqrtf(A)*alpha
+            //             a1 =    2*( (A-1) - (A+1)*cosf(w0)                   )
+            //             a2 =        (A+1) - (A-1)*cosf(w0) - 2*sqrtf(A)*alpha
+            b[0] = A * ((A + 1.f) + (A - 1.f) * cosf(w) + 2.f * sqrtf(A) * alpha);
+            b[1] = -2.f * A * ((A - 1.f) + (A + 1.f) * cosf(w));
+            b[2] = A * ((A + 1.f) + (A - 1.f) * cosf(w) - 2.f * sqrtf(A) * alpha);
 
-            a[0] = (A + 1) - (A - 1) * cos(w) + 2 * sqrt(A) * alpha;
-            a[1] = 2 * ((A - 1) - (A + 1) * cos(w));
-            a[2] = (A + 1) - (A - 1) * cos(w) - 2 * sqrt(A) * alpha;
+            a[0] = (A + 1.f) - (A - 1.f) * cosf(w) + 2.f * sqrtf(A) * alpha;
+            a[1] = 2.f * ((A - 1.f) - (A + 1.f) * cosf(w));
+            a[2] = (A + 1.f) - (A - 1.f) * cosf(w) - 2.f * sqrtf(A) * alpha;
             break;
 
         case EQ_TYPE_APF:
             // APF:        H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
 
             //            b0 =   1 - alpha
-            //            b1 =  -2*cos(w0)
+            //            b1 =  -2*cosf(w0)
             //            b2 =   1 + alpha
             //            a0 =   1 + alpha
-            //            a1 =  -2*cos(w0)
+            //            a1 =  -2*cosf(w0)
             //            a2 =   1 - alpha
-            b[0] = 1 - alpha;
-            b[1] = -2 * cos(w);
-            b[2] = 1 + alpha;
+            b[0] = 1.f - alpha;
+            b[1] = -2.f * cosf(w);
+            b[2] = 1.f + alpha;
 
-            a[0] = 1 + alpha;
-            a[1] = -2 * cos(w);
-            a[2] = 1 - alpha;
+            a[0] = 1.f + alpha;
+            a[1] = -2.f * cosf(w);
+            a[2] = 1.f - alpha;
             break;
         }
     }
@@ -582,8 +605,8 @@ static void SetBiquadCoefsFloat(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *
     {
         pCoefs->shifts_a = shifts.a;
         pCoefs->shifts_b = shifts.b;
-        pCoefs->shifts_a_mul = pow(2.0f, shifts.a); // Approch using multiplication insted shifting
-        pCoefs->shifts_b_mul = pow(2.0f, shifts.b);
+        pCoefs->shifts_a_mul = powf(2.0f, shifts.a); // Approch using multiplication insted shifting
+        pCoefs->shifts_b_mul = powf(2.0f, shifts.b);
     }
     else
     {
