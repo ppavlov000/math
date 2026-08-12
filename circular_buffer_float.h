@@ -26,19 +26,19 @@ typedef struct
         inst_name.elements[i] = 0; \
     }    
 
-INLINE void CircularBufferSetSize(CircularBuffer_t* pBuffer, intg_t num) {
+static void CircularBufferSetSize(CircularBuffer_t* pBuffer, intg_t num) {
     pBuffer->size = num;
 }
 
-INLINE void CircularBufferSetTail(CircularBuffer_t* pBuffer, intg_t pos) {
+static void CircularBufferSetTail(CircularBuffer_t* pBuffer, intg_t pos) {
     pBuffer->end = pos;
 }
 
-INLINE void CircularBufferSetFull(CircularBuffer_t* pBuffer) {
+static void CircularBufferSetFull(CircularBuffer_t* pBuffer) {
     pBuffer->end = pBuffer->size - 1;
 }
 
-INLINE void CircularBufferInit(CircularBuffer_t* pBuffer) {
+static void CircularBufferInit(CircularBuffer_t* pBuffer) {
     pBuffer->start = 0;
     pBuffer->end = 0;
     for (int i = 0; i < pBuffer->size; i++) {
@@ -46,7 +46,7 @@ INLINE void CircularBufferInit(CircularBuffer_t* pBuffer) {
     }
 }
 
-INLINE void CircularBufferInitFull(CircularBuffer_t* pBuffer) {
+static void CircularBufferInitFull(CircularBuffer_t* pBuffer) {
     pBuffer->start = 0;
     pBuffer->end = pBuffer->size - 1;
     for (int i = 0; i < pBuffer->size; i++) {
@@ -54,7 +54,7 @@ INLINE void CircularBufferInitFull(CircularBuffer_t* pBuffer) {
     }
 }
 
-INLINE void CircularBufferFill(CircularBuffer_t* pBuffer, CircularBufferElement_t value) {
+static void CircularBufferFill(CircularBuffer_t* pBuffer, CircularBufferElement_t value) {
     pBuffer->start = 0;
     pBuffer->end = 0;
     for (int i = 0; i < pBuffer->size; i++) {
@@ -62,7 +62,7 @@ INLINE void CircularBufferFill(CircularBuffer_t* pBuffer, CircularBufferElement_
     }
 }
 
-INLINE void CircularBufferPush(CircularBuffer_t* pBuffer, CircularBufferElement_t* value) {
+static void CircularBufferPush(CircularBuffer_t* pBuffer, CircularBufferElement_t* value) {
     pBuffer->elements[pBuffer->end] = *value;
     pBuffer->end++;
     if (pBuffer->end >= pBuffer->size) {
@@ -76,7 +76,7 @@ INLINE void CircularBufferPush(CircularBuffer_t* pBuffer, CircularBufferElement_
     }
 }
 
-INLINE CircularBufferElement_t CircularBufferPop(CircularBuffer_t* pBuffer){
+static CircularBufferElement_t CircularBufferPop(CircularBuffer_t* pBuffer){
     CircularBufferElement_t result = 0;
     if (pBuffer->start == pBuffer->end) {
         return result;
@@ -89,7 +89,7 @@ INLINE CircularBufferElement_t CircularBufferPop(CircularBuffer_t* pBuffer){
     return result;
 }
 
-INLINE CircularBufferElement_t CircularBufferGet(const CircularBuffer_t* pBuffer, int index) {
+static CircularBufferElement_t CircularBufferGet(const CircularBuffer_t* pBuffer, int index) {
     int idx = pBuffer->start + index;
     if (idx >= pBuffer->size) {
         idx -= pBuffer->size;
@@ -97,7 +97,7 @@ INLINE CircularBufferElement_t CircularBufferGet(const CircularBuffer_t* pBuffer
     return pBuffer->elements[idx];
 }
 
-INLINE CircularBufferElement_t CircularBufferGetFromTail(const CircularBuffer_t* pBuffer, int index) {
+static CircularBufferElement_t CircularBufferGetFromTail(const CircularBuffer_t* pBuffer, int index) {
     int idx = pBuffer->end - 1 - index;
     if (idx < 0) {
         idx += pBuffer->size;
@@ -106,7 +106,7 @@ INLINE CircularBufferElement_t CircularBufferGetFromTail(const CircularBuffer_t*
 }
 
 
-INLINE void CircularBufferSet(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int index) {
+static void CircularBufferSet(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int index) {
     int idx = pBuffer->start + index;
     if (idx >= pBuffer->size) {
         idx -= pBuffer->size;
@@ -114,32 +114,32 @@ INLINE void CircularBufferSet(CircularBuffer_t* pBuffer, CircularBufferElement_t
     pBuffer->elements[idx] = *value;
 }
 
-INLINE void CircularBufferPushChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size){
+static void CircularBufferPushChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size){
     for (int i = 0; i < size; i++) {
         CircularBufferPush(pBuffer, &value[i]);
     }
 }
 
-INLINE void CircularBufferPushChunkInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
+static void CircularBufferPushChunkInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < size; i++) {
         CircularBufferPush(pBuffer, &value[2 * i]);
     }
 }
 
-INLINE void CircularBufferPushChunkDualMonoToInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* valueL, CircularBufferElement_t* valueR, int size) {
+static void CircularBufferPushChunkDualMonoToInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* valueL, CircularBufferElement_t* valueR, int size) {
     for (int i = 0; i < size; i++) {
         CircularBufferPush(pBuffer, &valueL[i]);
         CircularBufferPush(pBuffer, &valueR[i]);
     }
 }
 
-INLINE void CircularBufferGetChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size){
+static void CircularBufferGetChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size){
     for (int i = 0; i < size; i++) {
         value[i] = CircularBufferGet(pBuffer, i);
     }
 }
 
-INLINE CircularBufferElement_t CircularBufferGetChunkSum(CircularBuffer_t* pBuffer, int size) {
+static CircularBufferElement_t CircularBufferGetChunkSum(CircularBuffer_t* pBuffer, int size) {
     CircularBufferElement_t sum = 0;
     for (int i = 0; i < size; i++) {
         sum += CircularBufferGet(pBuffer, i);
@@ -147,7 +147,7 @@ INLINE CircularBufferElement_t CircularBufferGetChunkSum(CircularBuffer_t* pBuff
 	return sum;
 }
 
-INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleaved(CircularBuffer_t* pBuffer, int size, int offset) {
+static CircularBufferElement_t CircularBufferGetAbsSumInterleaved(CircularBuffer_t* pBuffer, int size, int offset) {
     CircularBufferElement_t sum = 0;
     for (int i = 0; i < size; i++) {
         sum += fabsf(CircularBufferGet(pBuffer, 2 * i + offset));
@@ -155,7 +155,7 @@ INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleaved(CircularBuffer
     return sum;
 }
 
-INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleavedFromTail(CircularBuffer_t* pBuffer, int size, int offset) {
+static CircularBufferElement_t CircularBufferGetAbsSumInterleavedFromTail(CircularBuffer_t* pBuffer, int size, int offset) {
     CircularBufferElement_t sum = 0;
     for (int i = 0; i < size; i++) {
         sum += fabsf(CircularBufferGetFromTail(pBuffer, 2 * i + offset));
@@ -163,7 +163,7 @@ INLINE CircularBufferElement_t CircularBufferGetAbsSumInterleavedFromTail(Circul
     return sum;
 }
 
-INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleavedFromTail(CircularBuffer_t* pBuffer, int size, int offset) {
+static CircularBufferElement_t CircularBufferGetPeakInRangeInterleavedFromTail(CircularBuffer_t* pBuffer, int size, int offset) {
     CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i++) {
@@ -175,7 +175,7 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleavedFromTail(C
     return maxVal;
 }
 
-INLINE CircularBufferElement_t CircularBufferGetPeakInRangeFromTail(CircularBuffer_t* pBuffer, int size) {
+static CircularBufferElement_t CircularBufferGetPeakInRangeFromTail(CircularBuffer_t* pBuffer, int size) {
     CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i++) {
@@ -187,7 +187,7 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRangeFromTail(CircularBuff
     return maxVal;
 }
 
-INLINE CircularBufferElement_t CircularBufferGetPeakInRange(CircularBuffer_t* pBuffer, int size) {
+static CircularBufferElement_t CircularBufferGetPeakInRange(CircularBuffer_t* pBuffer, int size) {
     CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i++) {
@@ -199,7 +199,7 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRange(CircularBuffer_t* pB
     return maxVal;
 }
 
-INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleaved(CircularBuffer_t* pBuffer, int size, int offset) {
+static CircularBufferElement_t CircularBufferGetPeakInRangeInterleaved(CircularBuffer_t* pBuffer, int size, int offset) {
     CircularBufferElement_t maxVal = 0;
     CircularBufferElement_t val;
     for (int i = 0; i < size; i += 2) {
@@ -211,52 +211,46 @@ INLINE CircularBufferElement_t CircularBufferGetPeakInRangeInterleaved(CircularB
     return maxVal;
 }
 
-INLINE void CircularBufferPopChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
+static void CircularBufferPopChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < size; i++) {
         value[i] = CircularBufferPop(pBuffer);
     }
 }
 
-INLINE void CircularBufferPopChunkScaled(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, float scale, int size) {
+static void CircularBufferPopChunkScaled(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, float scale, int size) {
     for (int i = 0; i < size; i++) {
         value[i] = CircularBufferPop(pBuffer) * scale;
     }
 }
 
-INLINE void CircularBufferPopChunkScaledInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, float scale, int size) {
+static void CircularBufferPopChunkScaledInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, float scale, int size) {
     for (int i = 0; i < size; i++) {
         value[2 * i] = CircularBufferPop(pBuffer) * scale;
+        value[2 * i + 1] = 0;
     }
 }
 
-INLINE void CircularBufferPopChunkScaledInterleavedMix(CircularBuffer_t* pBuffer, CircularBufferElement_t* in, CircularBufferElement_t* out, float scale1, float scale2, int size) {
+static void CircularBufferPopChunkScaledInterleavedMix(CircularBuffer_t* pBuffer, CircularBufferElement_t* in, CircularBufferElement_t* out, float scale1, float scale2, int size) {
     for (int i = 0; i < size; i++) {
         out[2 * i] = CircularBufferPop(pBuffer) * scale1 + in[2 * i] * scale2;
     }
 }
 
-//INLINE void CircularBufferPopChunkScaledInterleavedToInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, float scale, int size) {
-//    for (int i = 0; i < size; i++) {
-//        value[2 * i] = CircularBufferPop(pBuffer) * scale;
-//    }
-//}
-
-
-INLINE void CircularBufferPushZeros(CircularBuffer_t* pBuffer, int size) {
+static void CircularBufferPushZeros(CircularBuffer_t* pBuffer, int size) {
 	CircularBufferElement_t zero = 0;
     for (int i = 0; i < size; i++) {
         CircularBufferPush(pBuffer, &zero);
     }
 }
 
-INLINE void CircularBufferGetChunkInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
+static void CircularBufferGetChunkInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < size; i++) {
         value[2 * i] = CircularBufferGet(pBuffer, i);
         value[2 * i + 1] = 0;
     }
 }
 
-INLINE void CircularBufferGetChunkInterleavedFromTail(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
+static void CircularBufferGetChunkInterleavedFromTail(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < size; i++) {
 		int ptr = size - 1 - i;
         value[2 * i] = CircularBufferGetFromTail(pBuffer, ptr);
@@ -264,7 +258,7 @@ INLINE void CircularBufferGetChunkInterleavedFromTail(CircularBuffer_t* pBuffer,
     }
 }
 
-INLINE void CircularBufferGetChunkInterleavedFromTailWithOffset(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size, int offset) {
+static void CircularBufferGetChunkInterleavedFromTailWithOffset(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size, int offset) {
     for (int i = 0; i < size; i++) {
         int ptr = offset + size - 1 - i;
         value[2 * i] = CircularBufferGetFromTail(pBuffer, ptr);
@@ -273,20 +267,19 @@ INLINE void CircularBufferGetChunkInterleavedFromTailWithOffset(CircularBuffer_t
 }
 
 
-INLINE void CircularBufferPopChunkInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
+static void CircularBufferPopChunkInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < size; i++) {
         value[2 * i] = CircularBufferPop(pBuffer);
-        value[2 * i + 1] = 0;
     }
 }
 
-INLINE void CircularBufferPushChunkDeinterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
+static void CircularBufferPushChunkDeinterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < (size >> 1); i++) {
         CircularBufferPush(pBuffer, &value[2 * i]);
     }
 }
 
-INLINE int CircularBufferGetSize(const CircularBuffer_t* pBuffer) {
+static int CircularBufferGetSize(const CircularBuffer_t* pBuffer) {
     int size = pBuffer->end - pBuffer->start;
     if (size < 0) {
         size += pBuffer->size;
@@ -294,7 +287,7 @@ INLINE int CircularBufferGetSize(const CircularBuffer_t* pBuffer) {
     return size;
 }
 
-INLINE CircularBufferElement_t CircularBufferPeek(CircularBuffer_t* pBuffer) {
+static CircularBufferElement_t CircularBufferPeek(CircularBuffer_t* pBuffer) {
     CircularBufferElement_t result = 0;
 
     if (pBuffer->start == pBuffer->end) {
@@ -311,7 +304,7 @@ INLINE CircularBufferElement_t CircularBufferPeek(CircularBuffer_t* pBuffer) {
     return result;
 }
 
-INLINE void CircularBufferAddChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int pos, int size) {
+static void CircularBufferAddChunk(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int pos, int size) {
     CircularBufferElement_t tmp;
     for (int i = 0; i < size; i++) {
         tmp = CircularBufferGet(pBuffer, pos + i);
