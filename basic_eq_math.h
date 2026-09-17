@@ -211,8 +211,14 @@ static void SetBiquadCoefsFloatDefault(BiquadParam_t *pParams, BiquadFloatMonoCo
 
 static void SetBiquadCoefsFloatSimple(BiquadParam_t *pParams, BiquadFloatMonoCoefs_t *pCoefs, float_t sampleRate)
 {
-    if ((sampleRate == 0) || (pParams->Q == 0) || (pParams->Frequency == 0)) return;
-   
+    if ((sampleRate == 0) || (pParams->Q == 0) || (pParams->Frequency == 0))
+    {
+        // Leave pCoefs in a defined, inactive/passthrough state instead of
+        // untouched (caller may pass an uninitialized stack temp).
+        SetBiquadCoefsFloatDefault(pParams, pCoefs, sampleRate);
+        return;
+    }
+
     float_t Fc = pParams->Frequency;
     float_t Q = pParams->Q;
     float_t dbGain = pParams->Gain;

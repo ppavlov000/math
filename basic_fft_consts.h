@@ -4,6 +4,10 @@
 #include "kiss_fft.h"
 #include "_kiss_fft_guts.h"
 
+#ifndef FFT_MAX_RECORDS
+#error "Please define FFT_MAX_RECORDS before including basic_fft.h"
+#endif
+
 typedef struct {
     int nfft;
     int inverse;
@@ -11,6 +15,7 @@ typedef struct {
     kiss_fft_cpx twiddles[];
 }kiss_fft_state_t;
 
+#if FFT_MAX_RECORDS >= 1
 const static kiss_fft_state_t fftCfg_0 = {
   128,
   0,
@@ -104,7 +109,9 @@ const static kiss_fft_state_t ifftCfg_0 = {
    9.80785251e-01f, -1.95090324e-01f,  9.89176512e-01f, -1.46730468e-01f,  9.95184720e-01f, -9.80171412e-02f,  9.98795450e-01f, -4.90676761e-02f, 
     }
 };
+#endif
 
+#if FFT_MAX_RECORDS >= 2
 const static kiss_fft_state_t fftCfg_1 = {
   256,
   0,
@@ -262,7 +269,9 @@ const static kiss_fft_state_t ifftCfg_1 = {
    9.95184720e-01f, -9.80171412e-02f,  9.97290432e-01f, -7.35645667e-02f,  9.98795450e-01f, -4.90676761e-02f,  9.99698818e-01f, -2.45412290e-02f, 
     }
 };
+#endif
 
+#if FFT_MAX_RECORDS >= 3
 const static kiss_fft_state_t fftCfg_2 = {
   512,
   0,
@@ -548,7 +557,9 @@ const static kiss_fft_state_t ifftCfg_2 = {
    9.98795450e-01f, -4.90676761e-02f,  9.99322355e-01f, -3.68072242e-02f,  9.99698818e-01f, -2.45412290e-02f,  9.99924719e-01f, -1.22715384e-02f, 
     }
 };
+#endif
 
+#if FFT_MAX_RECORDS >= 4
 const static kiss_fft_state_t fftCfg_3 = {
   1024,
   0,
@@ -1090,7 +1101,9 @@ const static kiss_fft_state_t ifftCfg_3 = {
    9.99698818e-01f, -2.45412290e-02f,  9.99830604e-01f, -1.84067301e-02f,  9.99924719e-01f, -1.22715384e-02f,  9.99981165e-01f, -6.13588467e-03f, 
     }
 };
+#endif
 
+#if FFT_MAX_RECORDS >= 5
 const static kiss_fft_state_t fftCfg_4 = {
   2048,
   0,
@@ -2144,7 +2157,9 @@ const static kiss_fft_state_t ifftCfg_4 = {
    9.99924719e-01f, -1.22715384e-02f,  9.99957621e-01f, -9.20375437e-03f,  9.99981165e-01f, -6.13588467e-03f,  9.99995291e-01f, -3.06795677e-03f, 
     }
 };
+#endif
 
+#if FFT_MAX_RECORDS >= 6
 const static kiss_fft_state_t fftCfg_5 = {
   4096,
   0,
@@ -4222,7 +4237,9 @@ const static kiss_fft_state_t ifftCfg_5 = {
    9.99981165e-01f, -6.13588467e-03f,  9.99989390e-01f, -4.60192608e-03f,  9.99995291e-01f, -3.06795677e-03f,  9.99998808e-01f, -1.53398013e-03f, 
     }
 };
+#endif
 
+#if FFT_MAX_RECORDS >= 7
 const static kiss_fft_state_t fftCfg_6 = {
   8192,
   0,
@@ -8348,6 +8365,7 @@ const static kiss_fft_state_t ifftCfg_6 = {
    9.99995291e-01f, -3.06795677e-03f,  9.99997377e-01f, -2.30096909e-03f,  9.99998808e-01f, -1.53398013e-03f,  9.99999702e-01f, -7.66990299e-04f, 
     }
 };
+#endif
 
 #endif // BASIC_FFT_CONSTS_H
 
