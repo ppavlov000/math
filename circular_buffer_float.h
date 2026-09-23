@@ -3,6 +3,13 @@
 
 #include "basic_types.h"
 
+#define MAX_METER_LEVEL_DB 12.0f
+#define MAX_METER_LEVEL (powf(10.0f, MAX_METER_LEVEL_DB / 20.0f))
+
+#define METER_FADE_PER_SAMPLE          (0.5f / (200.0f * 48.0f)) // 0.5 in 200ms
+#define MAXMETER_FADE_PER_SAMPLE       (0.5f / (200.0f * 48.0f)) // 0.5 in 200ms
+#define MAXMETER_KEEP_TIMEOUT_SAMPLES  (48000 * 1) // 1s
+
 #define CircularBufferElement_t float_t
 
 typedef struct
@@ -11,6 +18,9 @@ typedef struct
     int end;
 	int size;
     CircularBufferElement_t* elements;
+    CircularBufferElement_t level;
+    CircularBufferElement_t maxLevel;
+    int maxLevelTimer;
 } CircularBuffer_t;
 
 #define DECLARE_CIRCULAR_BUFFER(inst_name, N) \
@@ -22,28 +32,19 @@ typedef struct
     inst_name.end = 0; \
     inst_name.size = sizeof(inst_name##_array) / sizeof(CircularBufferElement_t); \
     inst_name.elements = inst_name##_array; \
+    inst_name.level = 0; \
+    inst_name.maxLevel = 0; \
+    inst_name.maxLevelTimer = 0; \
     for (int i = 0; i < inst_name.size; i++) { \
         inst_name.elements[i] = 0; \
     }    
 
-static void CircularBufferSetSize(CircularBuffer_t* pBuffer, intg_t num) {
-    pBuffer->size = num;
-}
-
-static void CircularBufferSetTail(CircularBuffer_t* pBuffer, intg_t pos) {
-    pBuffer->end = pos;
-}
-
-static void CircularBufferSetFull(CircularBuffer_t* pBuffer) {
-    pBuffer->end = pBuffer->size - 1;
-}
-
 static void CircularBufferInit(CircularBuffer_t* pBuffer) {
     pBuffer->start = 0;
     pBuffer->end = 0;
-    for (int i = 0; i < pBuffer->size; i++) {
-        pBuffer->elements[i] = 0;
-    }
+    pBuffer->level = 0;
+    pBuffer->maxLevel = 0;
+    pBuffer->maxLevelTimer = 0;
 }
 
 static void CircularBufferInitFull(CircularBuffer_t* pBuffer) {
@@ -52,6 +53,37 @@ static void CircularBufferInitFull(CircularBuffer_t* pBuffer) {
     for (int i = 0; i < pBuffer->size; i++) {
         pBuffer->elements[i] = 0;
     }
+    pBuffer->level = 0;
+    pBuffer->maxLevel = 0;
+    pBuffer->maxLevelTimer = 0;
+}
+
+static void CircularBufferSetSize(CircularBuffer_t* pBuffer, intg_t num) {
+    pBuffer->size = num;
+}
+
+static CircularBufferElement_t getLevel(const CircularBuffer_t* pBuffer) {
+    return pBuffer->level;
+}
+
+static CircularBufferElement_t getMaxLevel(const CircularBuffer_t* pBuffer) {
+    return pBuffer->maxLevel;
+}
+
+static void setLevel(CircularBuffer_t* pBuffer, CircularBufferElement_t val) {
+    pBuffer->level = val;
+}
+
+static void setMaxLevel(CircularBuffer_t* pBuffer, CircularBufferElement_t val) {
+    pBuffer->maxLevel = val;
+}
+
+static void CircularBufferSetTail(CircularBuffer_t* pBuffer, intg_t pos) {
+    pBuffer->end = pos;
+}
+
+static void CircularBufferSetFull(CircularBuffer_t* pBuffer) {
+    pBuffer->end = pBuffer->size - 1;
 }
 
 static void CircularBufferFill(CircularBuffer_t* pBuffer, CircularBufferElement_t value) {
@@ -74,6 +106,55 @@ static void CircularBufferPush(CircularBuffer_t* pBuffer, CircularBufferElement_
             pBuffer->start = 0;
         }
     }
+}
+
+static void CircularBufferPushWithMetering(CircularBuffer_t* pBuffer, CircularBufferElement_t* value) {
+    pBuffer->elements[pBuffer->end] = *value;
+    pBuffer->end++;
+    if (pBuffer->end >= pBuffer->size) {
+        pBuffer->end = 0;
+    }
+    if (pBuffer->end == pBuffer->start) {
+        pBuffer->start++;
+        if (pBuffer->start >= pBuffer->size) {
+            pBuffer->start = 0;
+        }
+    }
+
+    // Meters
+	CircularBufferElement_t absVal = (*value >= 0) ? *value : -(*value);
+    if (absVal > MAX_METER_LEVEL) {
+		absVal = MAX_METER_LEVEL;
+    }
+    if (pBuffer->level < absVal) {
+        pBuffer->level = absVal;
+    }
+    else {
+        if (pBuffer->level > METER_FADE_PER_SAMPLE) {
+            pBuffer->level = pBuffer->level - METER_FADE_PER_SAMPLE;
+        }
+        else {
+            pBuffer->level = 0;
+        }
+    }
+
+    if (pBuffer->maxLevel < pBuffer->level) {
+        pBuffer->maxLevel = pBuffer->level;
+        pBuffer->maxLevelTimer = MAXMETER_KEEP_TIMEOUT_SAMPLES;
+    }
+    else {
+        if (pBuffer->maxLevelTimer > 0) {
+            pBuffer->maxLevelTimer--;
+        }
+        else {
+            if (pBuffer->maxLevel > MAXMETER_FADE_PER_SAMPLE) {
+                pBuffer->maxLevel = pBuffer->maxLevel - MAXMETER_FADE_PER_SAMPLE;
+            }
+            else {
+				pBuffer->maxLevel = 0;
+            }
+        }
+    }   
 }
 
 static CircularBufferElement_t CircularBufferPop(CircularBuffer_t* pBuffer){
@@ -123,6 +204,12 @@ static void CircularBufferPushChunk(CircularBuffer_t* pBuffer, CircularBufferEle
 static void CircularBufferPushChunkInterleaved(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
     for (int i = 0; i < size; i++) {
         CircularBufferPush(pBuffer, &value[2 * i]);
+    }
+}
+
+static void CircularBufferPushChunkInterleavedWithMetering(CircularBuffer_t* pBuffer, CircularBufferElement_t* value, int size) {
+    for (int i = 0; i < size; i++) {
+        CircularBufferPushWithMetering(pBuffer, &value[2 * i]);
     }
 }
 
