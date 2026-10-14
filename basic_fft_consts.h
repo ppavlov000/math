@@ -1,19 +1,25 @@
 #ifndef __BASIC_FFT_CONSTS_H__
 #define __BASIC_FFT_CONSTS_H__
 
-#include "kiss_fft.h"
-#include "_kiss_fft_guts.h"
-
 #ifndef FFT_MAX_RECORDS
 #error "Please define FFT_MAX_RECORDS before including basic_fft.h"
 #endif
 
+#if BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_KISSFFT
+#include "../kissfft/kiss_fft.h"
+#include "../kissfft/_kiss_fft_guts.h"
 typedef struct {
     int nfft;
     int inverse;
     int factors[2 * MAXFACTORS];
     kiss_fft_cpx twiddles[];
-}kiss_fft_state_t;
+} kiss_fft_state_t;
+#elif BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_RADIX2
+#include "../newfft/simple_radix2_fft.h"
+#include "../newfft/simple_radix2_fft_config.h"
+typedef SimpleRadix2Complex kiss_fft_cpx;
+typedef struct SimpleRadix2Config kiss_fft_state_t;
+#endif
 
 #if FFT_MAX_RECORDS >= 1
 const static kiss_fft_state_t fftCfg_0 = {
@@ -8368,4 +8374,3 @@ const static kiss_fft_state_t ifftCfg_6 = {
 #endif
 
 #endif // BASIC_FFT_CONSTS_H
-

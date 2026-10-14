@@ -28,12 +28,21 @@
  * 128, 256, 512, 1024, 2048, 4096, 8192.
  */
 
-#ifdef __ADSPSHARCFX__
+#define BASIC_FFT_BACKEND_SHARC  1
+#define BASIC_FFT_BACKEND_KISSFFT 2
+#define BASIC_FFT_BACKEND_RADIX2 3
 
-/* SHARC FX target: use the ADI SHARC FX DSP library complex FFT (cfft/cifft)
- * with the static radix-4 twiddle tables shipped in the toolchain, instead
- * of kiss_fft. No per-instance FFT state is required since the twiddle
- * tables and FFT sizes are compile-time constants. */
+#ifndef BASIC_FFT_BACKEND
+#ifdef __ADSPSHARCFX__
+#define BASIC_FFT_BACKEND BASIC_FFT_BACKEND_SHARC
+#else
+#define BASIC_FFT_BACKEND BASIC_FFT_BACKEND_RADIX2
+#endif
+#endif
+
+#if BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_SHARC
+
+/* Use the ADI SHARC FX FFT and its static radix-4 twiddle tables. */
 #include <dsp/fft.h>
 #include <dsp/adi_fft.h>
 
@@ -67,56 +76,97 @@ static void IrFftInverse(IrFftCfg_t* fft, int cfgIdx, const float_t* in, float_t
     cifft((const complex_float*)in, (complex_float*)out, irFftTwiddle[cfgIdx], 1, irFftSize[cfgIdx]);
 }
 
-#else /* !__ADSPSHARCFX__ */
+#elif BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_KISSFFT
 
-#include "kiss_fft.h"
+#include "../kissfft/kiss_fft.h"
 #include "basic_fft_consts.h"
 
+typedef kiss_fft_cfg IrFftBackendCfg_t;
+
+#define IrFftTransform kiss_fft
+
+#elif BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_RADIX2
+
+#include "../newfft/simple_radix2_fft.h"
+#include "basic_fft_consts.h"
+
+typedef SimpleRadix2ConfigPtr IrFftBackendCfg_t;
+typedef SimpleRadix2Complex IrFftComplex_t;
+
+#define IrFftTransform simple_radix2_fft
+
+#else
+#error "Unsupported BASIC_FFT_BACKEND value"
+
+#endif
+
+#if BASIC_FFT_BACKEND != BASIC_FFT_BACKEND_SHARC
+
+#if BASIC_FFT_BACKEND != BASIC_FFT_BACKEND_SHARC
+static const int irFftSize[7] = { 128, 256, 512, 1024, 2048, 4096, 8192 };
+#endif
+
 typedef struct {
-    kiss_fft_cfg fftCfg[FFT_MAX_RECORDS];
-    kiss_fft_cfg ifftCfg[FFT_MAX_RECORDS];
+    IrFftBackendCfg_t fftCfg[FFT_MAX_RECORDS];
+    IrFftBackendCfg_t ifftCfg[FFT_MAX_RECORDS];
 } IrFftCfg_t;
 
 static void fftCfgInit(IrFftCfg_t* data) {
 
 #if FFT_MAX_RECORDS >= 1
-    data->fftCfg[0]  = (kiss_fft_cfg)&fftCfg_0;
-    data->ifftCfg[0] = (kiss_fft_cfg)&ifftCfg_0;
+    data->fftCfg[0]  = (IrFftBackendCfg_t)&fftCfg_0;
+    data->ifftCfg[0] = (IrFftBackendCfg_t)&ifftCfg_0;
 #endif
 #if FFT_MAX_RECORDS >= 2
-    data->fftCfg[1]  = (kiss_fft_cfg)&fftCfg_1;
-    data->ifftCfg[1] = (kiss_fft_cfg)&ifftCfg_1;
+    data->fftCfg[1]  = (IrFftBackendCfg_t)&fftCfg_1;
+    data->ifftCfg[1] = (IrFftBackendCfg_t)&ifftCfg_1;
 #endif
 #if FFT_MAX_RECORDS >= 3
-    data->fftCfg[2]  = (kiss_fft_cfg)&fftCfg_2;
-    data->ifftCfg[2] = (kiss_fft_cfg)&ifftCfg_2;
+    data->fftCfg[2]  = (IrFftBackendCfg_t)&fftCfg_2;
+    data->ifftCfg[2] = (IrFftBackendCfg_t)&ifftCfg_2;
 #endif
 #if FFT_MAX_RECORDS >= 4
-    data->fftCfg[3]  = (kiss_fft_cfg)&fftCfg_3;
-    data->ifftCfg[3] = (kiss_fft_cfg)&ifftCfg_3;
+    data->fftCfg[3]  = (IrFftBackendCfg_t)&fftCfg_3;
+    data->ifftCfg[3] = (IrFftBackendCfg_t)&ifftCfg_3;
 #endif  
 #if FFT_MAX_RECORDS >= 5
-    data->fftCfg[4]  = (kiss_fft_cfg)&fftCfg_4;
-    data->ifftCfg[4] = (kiss_fft_cfg)&ifftCfg_4;
+    data->fftCfg[4]  = (IrFftBackendCfg_t)&fftCfg_4;
+    data->ifftCfg[4] = (IrFftBackendCfg_t)&ifftCfg_4;
 #endif
 #if FFT_MAX_RECORDS >= 6
-    data->fftCfg[5]  = (kiss_fft_cfg)&fftCfg_5;
-    data->ifftCfg[5] = (kiss_fft_cfg)&ifftCfg_5;
+    data->fftCfg[5]  = (IrFftBackendCfg_t)&fftCfg_5;
+    data->ifftCfg[5] = (IrFftBackendCfg_t)&ifftCfg_5;
 #endif
 #if FFT_MAX_RECORDS >= 7
-    data->fftCfg[6]  = (kiss_fft_cfg)&fftCfg_6;
-    data->ifftCfg[6] = (kiss_fft_cfg)&ifftCfg_6;
+    data->fftCfg[6]  = (IrFftBackendCfg_t)&fftCfg_6;
+    data->ifftCfg[6] = (IrFftBackendCfg_t)&ifftCfg_6;
 #endif
 }
 
 static void IrFftForward(IrFftCfg_t* fft, int cfgIdx, const float_t* in, float_t* out) {
-    kiss_fft(fft->fftCfg[cfgIdx], (kiss_fft_cpx*)in, (kiss_fft_cpx*)out);
+#if BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_KISSFFT
+    IrFftTransform(fft->fftCfg[cfgIdx], (const kiss_fft_cpx*)in, (kiss_fft_cpx*)out);
+#else
+    IrFftTransform(fft->fftCfg[cfgIdx], (const IrFftComplex_t*)in, (IrFftComplex_t*)out);
+#endif
 }
 
 static void IrFftInverse(IrFftCfg_t* fft, int cfgIdx, const float_t* in, float_t* out) {
-    kiss_fft(fft->ifftCfg[cfgIdx], (kiss_fft_cpx*)in, (kiss_fft_cpx*)out);
+#if BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_KISSFFT
+    IrFftTransform(fft->ifftCfg[cfgIdx], (const kiss_fft_cpx*)in, (kiss_fft_cpx*)out);
+    for (int k = 0; k < (fft->fftCfg[cfgIdx]->nfft); k++) {
+        out[k] = out[2 * k] / (fft->fftCfg[cfgIdx]->nfft);
+    }         
+#else
+    IrFftTransform(fft->ifftCfg[cfgIdx], (const IrFftComplex_t*)in, (IrFftComplex_t*)out);
+    for (int k = 0; k < (fft->fftCfg[cfgIdx]->nfft); k++) {
+        out[k] = out[2 * k];
+    }      
+#endif
 }
 
-#endif /* __ADSPSHARCFX__ */
+#undef IrFftTransform
+
+#endif /* BASIC_FFT_BACKEND != BASIC_FFT_BACKEND_SHARC */
 
 #endif // __BASIC_FFT_H__
