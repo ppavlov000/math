@@ -40,6 +40,8 @@
 #endif
 #endif
 
+#include "basic_fft_consts.h"
+
 #if BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_SHARC
 
 /* Use the ADI SHARC FX FFT and its static radix-4 twiddle tables. */
@@ -56,14 +58,28 @@ static void fftCfgInit(IrFftCfg_t* data) {
 
 static const int irFftSize[7] = { 128, 256, 512, 1024, 2048, 4096, 8192 };
 
-static const complex_float* const irFftTwiddle[7] = {
-    twiddles_128_r4,
-    twiddles_256_r4,
-    twiddles_512_r4,
-    twiddles_1024_r4,
-    twiddles_2048_r4,
-    twiddles_4096_r4,
-    twiddles_8192_r4,
+static const complex_float* const irFftTwiddle[FFT_MAX_RECORDS] = {
+#if FFT_MAX_RECORDS >= 1    
+    ar_twiddles_128_r4,
+#endif    
+#if FFT_MAX_RECORDS >=2    
+    ar_twiddles_256_r4,
+#endif    
+#if FFT_MAX_RECORDS >=3    
+    ar_twiddles_512_r4,
+#endif    
+#if FFT_MAX_RECORDS >=4    
+    ar_twiddles_1024_r4,
+#endif    
+#if FFT_MAX_RECORDS >=5    
+    ar_twiddles_2048_r4,
+#endif    
+#if FFT_MAX_RECORDS >=6    
+    ar_twiddles_4096_r4,
+#endif    
+#if FFT_MAX_RECORDS >=7    
+    ar_twiddles_8192_r4,
+#endif
 };
 
 static void IrFftForward(IrFftCfg_t* fft, int cfgIdx, const float_t* in, float_t* out) {
@@ -79,7 +95,6 @@ static void IrFftInverse(IrFftCfg_t* fft, int cfgIdx, const float_t* in, float_t
 #elif BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_KISSFFT
 
 #include "../kissfft/kiss_fft.h"
-#include "basic_fft_consts.h"
 
 typedef kiss_fft_cfg IrFftBackendCfg_t;
 
@@ -88,7 +103,6 @@ typedef kiss_fft_cfg IrFftBackendCfg_t;
 #elif BASIC_FFT_BACKEND == BASIC_FFT_BACKEND_RADIX2
 
 #include "../newfft/simple_radix2_fft.h"
-#include "basic_fft_consts.h"
 
 typedef SimpleRadix2ConfigPtr IrFftBackendCfg_t;
 typedef SimpleRadix2Complex IrFftComplex_t;

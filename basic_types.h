@@ -27,7 +27,12 @@ Redistribution and use in source and binary forms, with or without modification,
 #define ALIGN32   __attribute__((aligned(32)))
 #define ALIGN64   __attribute__((aligned(64)))
 #define ALIGN128  __attribute__((aligned(128)))
-#define ALIGNED ALIGN32
+#define ALIGNED ALIGN128
+
+#ifndef SIZE_MAX
+    #define SIZE_MAX 0xffffffffui32
+#endif
+
 #else
 #define ALIGN32
 #define ALIGN64

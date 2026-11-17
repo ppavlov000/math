@@ -43,4 +43,32 @@ static void SmoothValue(float_t* current, float_t* target, float_t step) {
 }
 #endif
 
+
+#if defined __ADSPSHARCFX__
+// Analog devices SHARC FX 21835 platform
+#include <dsp/vector.h>
+#include <xtensa/tie/adi_sharc_fx0.h>
+#define ar_sqrtf(x)    ADI_SQRT_F32(x)
+#define ar_vec_mul(x, y, z, N) vecvmltf (x, y, z, N);
+
+#else
+// PC platform
+#define ar_sqrtf(x)    sqrtf(x)
+
+// void ar_vec_mul (const float_t *x, const float_t *y, float_t *z, int N)
+// {
+//     for (intg_t idx = 0; idx < N; idx++){
+//         z[idx] = x[idx] * y[idx];
+//     }
+// }
+
+// void ar_vec_complex_power(const float* re, const float*  im, float* pw, int n)
+// {
+//     for (int i = 0; i < n; i++){
+//         pw[i] = re[i] * re[i] + im[i] * im[i];
+//     }
+// }
+
+#endif
+
 #endif // __BASIC_FLOAT_MATH_H__
